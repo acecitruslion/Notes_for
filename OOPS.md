@@ -460,6 +460,164 @@ class Order:
 
 ---
 
+## Practice Design Problem: Parking lot
+
+Simple, relatable, and lets you show off every concept in one flow — good for a "design something" interview question.
+
+**Scenario:** A multi-level parking lot that accepts different vehicle types (Bike, Car, Truck), assigns spots based on size, and calculates parking fee on exit.
+
+```python
+from abc import ABC, abstractmethod
+from typing import final
+from datetime import datetime
+
+# ---------- Abstraction + Abstract Class + Pure Virtual Function ----------
+class Vehicle(ABC):
+    def __init__(self, plate_no):
+        self.plate_no = plate_no
+
+    @abstractmethod
+    def spot_size_needed(self):   # every vehicle type must define this
+        pass
+
+
+# ---------- Inheritance + Overriding ----------
+class Bike(Vehicle):
+    def spot_size_needed(self):
+        return "Small"
+
+class Car(Vehicle):
+    def spot_size_needed(self):
+        return "Medium"
+
+class Truck(Vehicle):
+    def spot_size_needed(self):
+        return "Large"
+
+
+# ---------- Interface (all-abstract) ----------
+class PaymentMethod(ABC):
+    @abstractmethod
+    def pay(self, amount): pass
+
+class UpiPayment(PaymentMethod):
+    def pay(self, amount): print(f"Paid Rs.{amount} via UPI")
+
+class CardPayment(PaymentMethod):
+    def pay(self, amount): print(f"Paid Rs.{amount} via Card")
+
+
+# ---------- Encapsulation ----------
+class ParkingSpot:
+    def __init__(self, spot_id, size):
+        self.spot_id = spot_id
+        self.size = size
+        self.__occupied = False        # private
+
+    def is_free(self):
+        return not self.__occupied
+
+    def occupy(self):
+        self.__occupied = True
+
+    def vacate(self):
+        self.__occupied = False
+
+
+# ---------- Composition (Ticket cannot exist without a Booking) ----------
+class Ticket:
+    def __init__(self, vehicle: Vehicle, spot: ParkingSpot):
+        self.vehicle = vehicle
+        self.spot = spot
+        self.entry_time = datetime.now()
+
+
+# ---------- Aggregation (Level exists independently, holds many spots) ----------
+class Level:
+    def __init__(self, level_no, spots: list):
+        self.level_no = level_no
+        self.spots = spots             # spots passed in, could exist elsewhere too
+
+    def find_free_spot(self, size):
+        for spot in self.spots:
+            if spot.size == size and spot.is_free():
+                return spot
+        return None
+
+
+# ---------- Static ----------
+class RateCard:
+    rate_per_hour = {"Small": 10, "Medium": 20, "Large": 40}
+
+    @staticmethod
+    def calculate(size, hours):
+        return RateCard.rate_per_hour[size] * max(hours, 1)
+
+
+# ---------- Association (ParkingLot references Levels, doesn't "consume" them) ----------
+class ParkingLot:
+    def __init__(self, levels: list):
+        self.levels = levels
+        self.active_tickets = {}       # composition: owned internally
+
+    def park_vehicle(self, vehicle: Vehicle):
+        size = vehicle.spot_size_needed()
+        for level in self.levels:
+            spot = level.find_free_spot(size)
+            if spot:
+                spot.occupy()
+                ticket = Ticket(vehicle, spot)
+                self.active_tickets[vehicle.plate_no] = ticket
+                print(f"{vehicle.plate_no} parked at Level {level.level_no}, Spot {spot.spot_id}")
+                return ticket
+        print("No spot available")
+        return None
+
+    @final                              # core exit/billing logic shouldn't be overridden
+    def exit_vehicle(self, plate_no, payment: PaymentMethod):
+        ticket = self.active_tickets.pop(plate_no)
+        hours = 1   # simplified — normally (now - entry_time)
+        amount = RateCard.calculate(ticket.spot.size, hours)
+        payment.pay(amount)             # polymorphic call
+        ticket.spot.vacate()
+
+
+# ---------- Usage ----------
+spots = [ParkingSpot(1, "Small"), ParkingSpot(2, "Medium"), ParkingSpot(3, "Large")]
+level1 = Level(1, spots)
+lot = ParkingLot([level1])
+
+car = Car("KA-01-1234")
+lot.park_vehicle(car)
+lot.exit_vehicle("KA-01-1234", UpiPayment())
+```
+
+**How the 20 concepts map onto this one example:**
+
+| Concept | Where it shows up |
+|---|---|
+| Class / Object | `Beverage`, `Order`, etc. / `cust`, `order`, `Espresso()` |
+| Constructor | `__init__` in every class |
+| Destructor | (not shown — would clean up e.g. a POS terminal connection) |
+| Encapsulation | `Customer.__loyalty_points` private, accessed via methods |
+| Abstraction | `Beverage` hides how each drink is actually prepared |
+| Inheritance | `Espresso`, `Latte` inherit from `Beverage` |
+| Polymorphism / Runtime | `payment.pay()` behaves differently for UPI vs Card, decided at call time |
+| Compile-time Polymorphism | `Store.apply_tax(amount, discount=0)` — simulated overload |
+| Overloading | Same `apply_tax()` usable with or without discount |
+| Overriding | `prepare()` redefined in each `Beverage` subclass |
+| Virtual Function | Default Python behavior — `item.beverage.prepare()` dispatches to actual subclass |
+| Pure Virtual Function | `Beverage.prepare()` and `PaymentMethod.pay()` |
+| Abstract Class | `Beverage` (has both abstract `prepare()` and concrete `describe()`) |
+| Interface | `PaymentMethod` (100% abstract, no shared state) |
+| Static | `Store.tax_rate`, `Store.apply_tax()` |
+| Final | `Order.checkout()` marked `@final` — shouldn't be overridden |
+| Association | `Order` holds references to `Customer` and `Barista` (neither owned) |
+| Aggregation | `Barista` exists independently — same barista serves many orders |
+| Composition | `OrderItem`s live and die with their `Order` |
+
+---
+
 ## Quick Recap Table
 
 | Concept | One-liner |
