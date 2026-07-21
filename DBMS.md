@@ -1,4 +1,4 @@
-# DBMS + SQL — Interview Notes (Infosys L2/L3)
+# DBMS + SQL
 
 Simple, exam-ready notes. Each topic = short definition + example. Use this alongside the checklist.
 
