@@ -310,6 +310,15 @@ This avoids a JOIN on every query, but now if the customer's name changes, it mu
                                       Bitmap Index
 ```
 
+### Clustered vs Non-clustered Index
+
+| **Clustered** | **Non-clustered** |
+|---------------|-------------------|
+| Stores actual data | Stores pointers |
+| Data physically sorted | Separate index |
+| Only one | Multiple |
+| Faster range queries | Faster specific lookups |
+
 ## 8. Joins ⭐⭐⭐
 
 - **INNER JOIN**: Only matching rows from both tables.
