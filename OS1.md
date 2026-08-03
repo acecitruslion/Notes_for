@@ -12,7 +12,7 @@ Format: short definition + example. Keep answers to 1-2 lines, expand only if as
 
 ### 2. Process States
 
-- <img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/1b44b592-ec50-4d7a-809f-5a21b13a967f" />
+  <img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/1b44b592-ec50-4d7a-809f-5a21b13a967f" />
 
 - **Ready** – waiting for CPU.
 - **Running** – currently executing.
