@@ -310,7 +310,7 @@ This avoids a JOIN on every query, but now if the customer's name changes, it mu
                                       Bitmap Index
 ```
 
-### Clustered vs Non-clustered Index
+## 14. Clustered vs Non-clustered Index
 
 | **Clustered** | **Non-clustered** |
 |---------------|-------------------|
