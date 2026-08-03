@@ -287,6 +287,27 @@ This avoids a JOIN on every query, but now if the customer's name changes, it mu
 
 **Why not index every column?** Each index adds overhead on every write operation and consumes storage — so index only columns frequently used in WHERE/JOIN/ORDER BY.
 
+                         INDEXING IN DBMS
+                               │
+              ┌────────────────┴────────────────┐
+              │                                 │
+      Primary Index                     Secondary Index
+              │                                 │
+      ┌───────┴────────┐              ┌─────────┴─────────┐
+      │                │              │                   │
+   Dense Index     Sparse Index   Clustered Index   Non-Clustered Index
+                                           │
+                                           │
+                                  Multi-Level Index
+                                           │
+                                  ┌────────┴────────┐
+                                  │                 │
+                               B-Tree           B+ Tree
+                                           │
+                                      Hash Index
+                                           │
+                                      Bitmap Index
+
 ---
 
 ## 8. Joins ⭐⭐⭐
