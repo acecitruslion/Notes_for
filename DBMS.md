@@ -287,6 +287,7 @@ This avoids a JOIN on every query, but now if the customer's name changes, it mu
 
 **Why not index every column?** Each index adds overhead on every write operation and consumes storage — so index only columns frequently used in WHERE/JOIN/ORDER BY.
 
+```text
                          INDEXING IN DBMS
                                │
               ┌────────────────┴────────────────┐
@@ -307,8 +308,7 @@ This avoids a JOIN on every query, but now if the customer's name changes, it mu
                                       Hash Index
                                            │
                                       Bitmap Index
-
----
+```
 
 ## 8. Joins ⭐⭐⭐
 
