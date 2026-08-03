@@ -11,10 +11,14 @@ Format: short definition + example. Keep answers to 1-2 lines, expand only if as
 - **Process** – active instance of a program in execution, has its own memory, PCB (Process Control Block), state.
 
 ### 2. Process States
-`New → Ready → Running → Waiting (Blocked) → Terminated`
+
+- <img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/1b44b592-ec50-4d7a-809f-5a21b13a967f" />
+
 - **Ready** – waiting for CPU.
 - **Running** – currently executing.
 - **Waiting** – blocked on I/O or an event.
+
+
 
 ### 3. Process vs Thread
 | Process | Thread |
