@@ -1,293 +1,218 @@
-# DBMS + SQL
+# DBMS + SQL — Complete Interview Notes
+### Infosys Specialist Programmer Prep
 
-Simple, exam-ready notes. Each topic = short definition + example. Use this alongside the checklist.
+Structure: Definition → Example → Why it matters. Crisp, exam/interview-ready.
 
 ---
 
 ## 1. DBMS Basics
 
 - **DBMS**: Software to store, manage, and retrieve data (e.g., MySQL, Oracle).
-- **RDBMS**: DBMS that stores data in tables (relations) with rows/columns and enforces relationships via keys.
-- **DBMS vs RDBMS**: DBMS may not enforce relationships or normalization; RDBMS does, using keys and constraints.
-- **Table/Relation**: A structured set of rows and columns.
-- **Tuple/Row**: A single record in a table.
-- **Attribute/Column**: A field/property of a table.
-- **Schema**: The structure/blueprint of the database (tables, columns, types) — doesn't change often.
-- **Instance**: The actual data in the DB at a given moment — changes frequently.
-- **Degree**: Number of columns (attributes) in a table.
-- **Cardinality**: Number of rows (tuples) in a table.
-- **Entity**: A real-world object represented in the DB (e.g., Student, Order).
-- **Strong Entity**: Has its own primary key, exists independently.
-- **Weak Entity**: No primary key of its own; depends on a strong entity (uses a foreign key + partial key).
-- **View**: A virtual table based on a SQL query; doesn't store data physically.
+- **RDBMS**: DBMS that stores data in tables with rows/columns and enforces relationships via keys.
+- **DBMS vs RDBMS**: DBMS may not enforce relationships/normalization; RDBMS does, using keys, constraints, and ACID.
+- **Table/Relation**: Structured set of rows and columns.
+- **Tuple/Row**: A single record.
+- **Attribute/Column**: A field/property.
+- **Schema vs Instance**: Schema = structure/blueprint (rarely changes). Instance = actual data at a moment in time (changes often).
+- **Degree vs Cardinality**: Degree = number of columns. Cardinality = number of rows.
+- **View**: Virtual table from a saved query; doesn't store data itself.
+
+**Say in interview:** "RDBMS is a subset of DBMS that stores data in tabular form and enforces relationships and constraints between tables — that's what enables normalization."
 
 ---
 
 ## 2. Keys ⭐
 
-- **Primary Key**: Uniquely identifies each row; can't be NULL, only one per table.
-- **Foreign Key**: Column referencing the Primary Key of another table; maintains relationships.
-- **Candidate Key**: Any column(s) that could qualify as Primary Key (minimal, unique).
-- **Super Key**: Any set of columns that uniquely identifies a row (can have extra columns).
-- **Composite Key**: Primary key made of 2+ columns together.
-- **Unique Key**: Ensures uniqueness but allows one NULL; a table can have multiple.
+- **Primary Key** – uniquely identifies each row, no NULLs, one per table.
+- **Foreign Key** – column referencing another table's PK; maintains relationships.
+- **Candidate Key** – any minimal column set that could qualify as PK.
+- **Super Key** – any column set that uniquely identifies a row (may have extra, non-minimal columns).
+- **Composite Key** – PK made of 2+ columns together, e.g., `(OrderID, ProductID)`.
+- **Unique Key** – ensures uniqueness like PK but allows **one NULL**; multiple allowed per table.
+
+```sql
+CREATE TABLE Student (
+  RollNo INT PRIMARY KEY,
+  Email VARCHAR(50) UNIQUE,
+  Aadhar VARCHAR(12) UNIQUE
+);
+```
 
 **Differences:**
-- **PK vs Unique Key**: PK doesn't allow NULL, only one per table; Unique Key allows one NULL, multiple allowed.
-- **Candidate Key vs Super Key**: Every candidate key is a super key, but not every super key is minimal enough to be a candidate key.
+- **PK vs Unique Key** – PK: no NULL, one per table. Unique: one NULL allowed, multiple per table.
+- **Candidate Key vs Super Key** – every candidate key is a super key (minimal); not every super key is minimal enough to be a candidate key.
+- **PK vs FK** – PK identifies its own row; FK references another table's PK.
 
 ---
 
 ## 3. Constraints
 
-- **NOT NULL**: Column can't have NULL values.
-- **UNIQUE**: All values in column must be distinct.
-- **PRIMARY KEY**: NOT NULL + UNIQUE combined.
-- **FOREIGN KEY**: Enforces valid reference to another table's PK.
-- **CHECK**: Restricts values based on a condition (e.g., age > 18).
-- **DEFAULT**: Sets a default value if none provided.
-- **Referential Integrity**: Ensures FK values always match an existing PK (no orphan records).
+- **NOT NULL** – column can't be NULL.
+- **UNIQUE** – all values distinct (one NULL allowed).
+- **PRIMARY KEY** – NOT NULL + UNIQUE.
+- **FOREIGN KEY** – enforces valid reference to another table's PK.
+- **CHECK** – restricts values by condition, e.g. `CHECK (Age >= 18)`.
+- **DEFAULT** – sets a default value if none provided.
+- **Referential Integrity** – FK value must match an existing PK or be NULL (no orphan rows).
+- **Data Integrity** – overall accuracy/consistency of data; types: entity, referential, domain, user-defined integrity.
 
 ---
 
 ## 4. Normalization ⭐⭐⭐
 
-**Why?** To reduce data redundancy and avoid anomalies.
-
-- **Data Redundancy**: Same data repeated unnecessarily across rows.
-- **Insert Anomaly**: Can't insert data without unrelated data also being present.
-- **Update Anomaly**: Same data must be updated in multiple places — risk of inconsistency.
-- **Delete Anomaly**: Deleting one record accidentally removes other useful data.
+**Why?** Reduce redundancy, avoid anomalies.
+- **Insert anomaly** – can't insert data without unrelated data also present.
+- **Update anomaly** – same data must be updated in multiple places → inconsistency risk.
+- **Delete anomaly** – deleting one record accidentally removes other useful data.
 
 **Dependencies:**
-- **Functional Dependency (FD)**: Column B depends on Column A (A → B).
-- **Partial Dependency**: Non-key column depends on only part of a composite key.
-- **Transitive Dependency**: Non-key column depends on another non-key column, not directly on the key.
+- **Functional Dependency (A → B)** – value of A determines value of B. E.g. `RollNo → Name`.
+- **Partial Dependency** – non-key column depends on only *part* of a composite key.
+- **Transitive Dependency** – non-key column depends on another non-key column, not directly on the key.
 
-### Normal Forms — Detailed
+### Step-by-step example
 
-**Starting point — Unnormalized Table (UNF):**
+**Unnormalized (UNF):**
 
-| StudentID | StudentName | Courses            | InstructorPhone |
-|-----------|-------------|---------------------|------------------|
-| 1         | Ravi        | Maths, Science       | 9990001111       |
-| 2         | Priya       | Science               | 9990002222       |
+| StudentID | StudentName | Courses | InstructorPhone |
+|---|---|---|---|
+| 1 | Ravi | Maths, Science | 9990001111 |
+| 2 | Priya | Science | 9990002222 |
 
-Problem: the `Courses` column holds multiple values in one cell (not atomic). This table can suffer **all anomalies** — insert, update, and delete — because everything is jammed into one place.
+Problem: `Courses` isn't atomic — multiple values in one cell.
 
----
+**1NF — atomic values, no repeating groups**
 
-**1NF — First Normal Form**
-- **Rule**: Every column must have atomic (single) values — no multi-valued or repeating columns.
-- **Fix**: Split multi-valued rows into separate rows.
+| StudentID | StudentName | Course | InstructorPhone |
+|---|---|---|---|
+| 1 | Ravi | Maths | 9990001111 |
+| 1 | Ravi | Science | 9990002222 |
+| 2 | Priya | Science | 9990002222 |
 
-| StudentID | StudentName | Course  | InstructorPhone |
-|-----------|-------------|---------|------------------|
-| 1         | Ravi        | Maths   | 9990001111       |
-| 1         | Ravi        | Science | 9990002222       |
-| 2         | Priya       | Science | 9990002222       |
+Still has anomalies: `StudentName` and `InstructorPhone` repeat → insert anomaly (can't add a course with no student), update anomaly (name change → multiple rows), delete anomaly (dropping Maths might lose the fact the course exists).
 
-- **Anomaly still present**: Data is now atomic, but `StudentName` repeats for every course (redundancy), and `InstructorPhone` repeats too.
-  - **Insert anomaly**: Can't add a new course unless a student is enrolled in it.
-  - **Update anomaly**: If Ravi's name changes, you must update it in multiple rows.
-  - **Delete anomaly**: If Ravi drops Maths (delete that row), you might lose the fact that Maths course exists at all (if no other student takes it).
+**2NF — remove partial dependency** (PK = composite `StudentID + Course`; `InstructorPhone` depends only on `Course`, not the full key)
 
----
+**Enrollment** `(StudentID, Course)` &nbsp;&nbsp; **CourseInstructor** `(Course, InstructorPhone)`
 
-**2NF — Second Normal Form**
-- **Rule**: Must be in 1NF + **no partial dependency** — i.e., no non-key column should depend on only *part* of a composite primary key. (Only relevant when the PK is composite, e.g., `StudentID + Course`.)
-- Here, `InstructorPhone` depends only on `Course` (part of the key), not on the full key `(StudentID, Course)` → partial dependency.
-- **Fix**: Split into two tables.
+Partial dependency redundancy removed. Transitive dependency issues can still exist elsewhere.
 
-**Enrollment**
+**3NF — remove transitive dependency**
 
-| StudentID | Course  |
-|-----------|---------|
-| 1         | Maths   |
-| 1         | Science |
-| 2         | Science |
+| StudentID | StudentName | DeptID | DeptName |
+|---|---|---|---|
+| 1 | Ravi | D1 | Computer Science |
 
-**CourseInstructor**
+`DeptName` depends on `DeptID`, which depends on `StudentID` → transitive. Split:
 
-| Course  | InstructorPhone |
-|---------|------------------|
-| Maths   | 9990001111       |
-| Science | 9990002222       |
+**Student** `(StudentID, StudentName, DeptID)` &nbsp;&nbsp; **Department** `(DeptID, DeptName)`
 
-- **Anomaly removed**: Partial dependency (and the redundant repetition of `InstructorPhone`) is gone.
-- **Anomaly still present**: Transitive dependency issues can still exist in other tables (see 3NF below) — e.g., if we had also kept `StudentName` next to `StudentID` repeatedly, or if one column depends on another non-key column.
+Update/insert/delete anomalies around department data are now fixed.
 
----
-
-**3NF — Third Normal Form**
-- **Rule**: Must be in 2NF + **no transitive dependency** — a non-key column should not depend on another non-key column (it must depend only on the primary key directly).
-- **Example problem table:**
-
-| StudentID | StudentName | DeptID | DeptName   |
-|-----------|-------------|--------|------------|
-| 1         | Ravi        | D1     | Computer Science |
-| 2         | Priya       | D2     | Electronics       |
-
-Here, `DeptName` depends on `DeptID`, and `DeptID` depends on `StudentID` → `DeptName` is transitively dependent on `StudentID` through `DeptID`.
-
-- **Fix**: Split into two tables.
-
-**Student**
-
-| StudentID | StudentName | DeptID |
-|-----------|-------------|--------|
-| 1         | Ravi        | D1     |
-| 2         | Priya       | D2     |
-
-**Department**
-
-| DeptID | DeptName          |
-|--------|-------------------|
-| D1     | Computer Science  |
-| D2     | Electronics       |
-
-- **Anomaly removed**: Transitive dependency gone.
-  - **Update anomaly fixed**: Department name is now stored once — no risk of inconsistent updates.
-  - **Insert anomaly fixed**: Can add a new department even with no students yet.
-  - **Delete anomaly fixed**: Deleting a student doesn't wipe out department info.
-
----
-
-**BCNF — Boyce-Codd Normal Form**
-- **Rule**: Stricter version of 3NF — for every functional dependency `A → B`, `A` must be a **candidate key**. Needed when a table has multiple overlapping candidate keys.
-- **Example problem** (a rare edge case 3NF misses):
+**BCNF — every determinant must be a candidate key** (stricter, handles overlapping candidate key edge cases 3NF misses)
 
 | Student | Subject | Teacher |
-|---------|---------|---------|
-| Ravi    | Maths   | Mr. A   |
-| Ravi    | Science | Mr. B   |
-| Priya   | Maths   | Mr. A   |
+|---|---|---|
+| Ravi | Maths | Mr. A |
+| Ravi | Science | Mr. B |
 
-Assume: each Teacher teaches only one Subject, but a Subject can have multiple Teachers, and (Student, Subject) is the primary key. Here `Teacher → Subject` is a valid dependency, but `Teacher` is **not** a candidate key → violates BCNF (even though it's already in 3NF).
+If each Teacher teaches only one Subject (`Teacher → Subject`) but Teacher isn't a candidate key → violates BCNF even though it's in 3NF. Split into **StudentTeacher** and **TeacherSubject**.
 
-- **Fix**: Split further so that every determinant is a candidate key.
+### Quick summary
 
-**StudentTeacher**
+| Normal Form | Fixes | Still prone to |
+|---|---|---|
+| 1NF | Non-atomic values, repeating groups | Insert/Update/Delete anomalies |
+| 2NF | Partial dependency | Transitive dependency |
+| 3NF | Transitive dependency | Rare overlapping-candidate-key anomalies |
+| BCNF | Non-candidate-key determinants | Practically anomaly-free |
 
-| Student | Teacher |
-|---------|---------|
-| Ravi    | Mr. A   |
-| Ravi    | Mr. B   |
-| Priya   | Mr. A   |
-
-**TeacherSubject**
-
-| Teacher | Subject |
-|---------|---------|
-| Mr. A   | Maths   |
-| Mr. B   | Science |
-
-- **Anomaly removed**: The subtle redundancy/update anomaly caused by a non-candidate-key determinant is gone.
-
----
-
-### Quick summary — which NF removes which anomaly
-
-| Normal Form | Fixes                                             | Still Prone To                          |
-|-------------|----------------------------------------------------|------------------------------------------|
-| 1NF         | Non-atomic values, repeating groups               | Insert, Update, Delete anomalies (redundancy) |
-| 2NF         | Partial dependency (redundancy from composite key) | Transitive dependency issues              |
-| 3NF         | Transitive dependency                              | Rare anomalies from overlapping candidate keys |
-| BCNF        | Anomalies from non-candidate-key determinants       | (Practically anomaly-free for most cases) |
-
-**3NF vs BCNF**: BCNF handles rare edge cases where a table is in 3NF but still has anomalies due to overlapping/multiple candidate keys — in most real interview scenarios, 3NF is "good enough," but know BCNF exists for stricter cases.
-
-**Example flow:** Unnormalized table (repeating columns) → 1NF (split repeating data into rows) → 2NF (remove partial dependency by splitting tables) → 3NF (remove transitive dependency by splitting further) → BCNF (fix overlapping candidate key issues).
-
----
+**One-liner:** "1NF = atomicity, 2NF = no partial dependency, 3NF = no transitive dependency, BCNF = every determinant is a candidate key."
 
 ### Denormalization
 
-- **What**: The process of intentionally introducing redundancy into a normalized database — merging tables back together or duplicating columns — to improve read performance.
-- **Why**: Normalization reduces redundancy but increases the number of JOINs needed to fetch data. Too many JOINs on large tables can slow down reads. Denormalization trades some redundancy for faster reads.
-- **When to use**: Reporting/analytics systems, read-heavy applications (e.g., dashboards), or when JOIN cost outweighs the storage/consistency cost.
+Intentionally reintroducing redundancy (merging tables / duplicating columns) to speed up reads by reducing JOINs.
 
-**Example:** Instead of joining `Orders` and `Customers` every time to show a customer's name on an invoice, you might store `CustomerName` directly inside the `Orders` table too — even though it's already in `Customers`.
+**Example:** storing `CustomerName` directly in `Orders` even though it's already in `Customers`, to avoid a JOIN on every read — at the cost of updating it in two places if it changes.
 
-| OrderID | CustomerID | CustomerName | Amount |
-|---------|------------|--------------|--------|
-| 101     | C1         | Ravi         | 5000   |
-
-This avoids a JOIN on every query, but now if the customer's name changes, it must be updated in both places.
-
-**Normalization vs Denormalization:**
-
-| Aspect       | Normalization                     | Denormalization                  |
-|--------------|-------------------------------------|-----------------------------------|
-| Goal         | Reduce redundancy, avoid anomalies | Improve read/query performance    |
-| Redundancy   | Minimal                            | Intentionally increased           |
-| Writes       | Faster, safer (update in one place)| Slower/riskier (update in many places) |
-| Reads        | Slower (more JOINs)                | Faster (fewer JOINs)              |
-| Used in      | OLTP (transactional systems)       | OLAP (reporting/analytics systems)|
-
-**Trade-off to remember**: Normalization favors data integrity and write efficiency; Denormalization favors read speed at the cost of redundancy and update complexity.
+| Aspect | Normalization | Denormalization |
+|---|---|---|
+| Goal | Reduce redundancy, avoid anomalies | Improve read performance |
+| Redundancy | Minimal | Intentionally increased |
+| Writes | Faster/safer | Slower/riskier |
+| Reads | Slower (more JOINs) | Faster (fewer JOINs) |
+| Used in | OLTP | OLAP / reporting |
 
 ---
 
 ## 5. Transactions ⭐⭐⭐
 
-- **Transaction**: A sequence of operations treated as a single unit of work.
+A **transaction** = sequence of operations treated as one logical unit of work.
 
-**ACID Properties:**
-- **Atomicity**: All operations succeed, or none do (all-or-nothing).
-- **Consistency**: DB moves from one valid state to another, respecting rules/constraints.
-- **Isolation**: Concurrent transactions don't interfere with each other.
-- **Durability**: Once committed, changes persist even after a crash.
+```sql
+BEGIN TRANSACTION;
+UPDATE Account SET Balance = Balance - 500 WHERE ID = 1;
+UPDATE Account SET Balance = Balance + 500 WHERE ID = 2;
+COMMIT;
+```
 
-- **COMMIT**: Saves changes permanently.
-- **ROLLBACK**: Undoes changes since last commit.
-- **SAVEPOINT**: A checkpoint within a transaction you can roll back to (without undoing everything).
-- **Transaction states**: Active → Partially Committed → Committed / Failed → Aborted.
+- **COMMIT** – saves changes permanently.
+- **ROLLBACK** – undoes changes since last commit.
+- **SAVEPOINT** – checkpoint within a transaction to roll back to partially.
+- **States**: Active → Partially Committed → Committed / Failed → Aborted.
 
-**Bank example:** Transferring ₹500 from A to B = debit A + credit B. Atomicity ensures both happen or neither; Durability ensures once confirmed, it's saved even if the system crashes right after.
+### ACID Properties
+- **Atomicity** – all or nothing.
+- **Consistency** – DB moves between valid states, respecting constraints.
+- **Isolation** – concurrent transactions don't interfere.
+- **Durability** – committed changes survive crashes.
+
+**Example:** Bank transfer of ₹500, A → B. Atomicity ensures debit+credit both happen or neither; Durability ensures it survives a crash right after commit.
 
 ---
 
 ## 6. Concurrency Control ⭐⭐
 
-**Problems:**
-- **Dirty Read**: Reading uncommitted data from another transaction that might later be rolled back.
-- **Non-repeatable Read**: Reading the same row twice in a transaction gives different results because another transaction updated it in between.
-- **Phantom Read**: Re-running the same query returns new rows because another transaction inserted data in between.
-- **Lost Update**: Two transactions update the same data, and one update overwrites the other.
+**Problems from uncontrolled concurrency:**
+- **Dirty Read** – reading another transaction's uncommitted data (which may later roll back).
+- **Non-repeatable Read** – re-reading the same row gives a different value because another transaction updated & committed it in between.
+- **Phantom Read** – re-running the same query returns a different row set because another transaction inserted/deleted matching rows.
+- **Lost Update** – two transactions update the same data; one overwrites the other.
 
-**Locks:**
-- **Locking**: Mechanism to prevent conflicting access to data.
-- **Shared Lock (S)**: Multiple transactions can read, none can write.
-- **Exclusive Lock (X)**: Only one transaction can read/write; blocks others.
+### Locking
+- **Shared Lock (S)** – multiple transactions can hold it for reading; blocks writes.
+- **Exclusive Lock (X)** – only one transaction can hold it (for writing); blocks all other locks.
 
-**Isolation Levels** (weakest → strongest):
-- **Read Uncommitted**: Allows dirty reads.
-- **Read Committed**: Prevents dirty reads.
-- **Repeatable Read**: Prevents dirty + non-repeatable reads.
-- **Serializable**: Prevents all — dirty, non-repeatable, and phantom reads (strictest, slowest).
+### Two-Phase Locking (2PL)
+1. **Growing phase** – acquire locks only, can't release.
+2. **Shrinking phase** – release locks only, can't acquire.
 
-**Deadlock:**
-- **What**: Two transactions wait on each other's locks forever (T1 waits for T2's resource, T2 waits for T1's).
-- **Handling idea**: DB detects the cycle and aborts one transaction (timeout or wait-for-graph detection).
+Guarantees serializability. *Strict 2PL* releases all locks only at commit/rollback — avoids cascading rollbacks.
+
+### Deadlock
+Two+ transactions wait on each other's locks forever.
+- **Causes**: mutual exclusion, hold-and-wait, no preemption, circular wait.
+- **Prevention**: acquire all locks upfront, enforce lock ordering, wait-die/wound-wait schemes.
+- **Detection**: wait-for graph — a cycle means deadlock → abort one transaction (victim selection) or use timeouts.
+
+### Isolation Levels (weakest → strongest)
+
+| Level | Dirty Read | Non-Repeatable Read | Phantom Read |
+|---|---|---|---|
+| Read Uncommitted | ✅ Possible | ✅ Possible | ✅ Possible |
+| Read Committed | ❌ | ✅ Possible | ✅ Possible |
+| Repeatable Read | ❌ | ❌ | ✅ Possible |
+| Serializable | ❌ | ❌ | ❌ |
+
+Higher isolation = more consistency, less concurrency (performance trade-off).
 
 ---
 
 ## 7. Indexing ⭐⭐⭐
 
-- **Index**: A data structure that speeds up data retrieval (like a book's index).
-- **Why**: Avoids full table scans; speeds up SELECT/WHERE/JOIN queries.
-- **B+ Tree**: Balanced tree structure most DBs use for indexes — all data at leaf level, leaves linked for fast range queries.
-- **Why B+ Tree**: Efficient for both exact lookups and range queries; keeps tree shallow for large data (fast disk access).
-- **Clustered Index**: Determines the physical order of data in the table; only one per table (often the PK).
-- **Non-clustered Index**: Separate structure pointing to actual data rows; a table can have many.
+An **index** is a data structure that speeds up data retrieval (like a book's index) — avoids full table scans.
 
-**Pros:** Faster reads/searches.
-**Cons:** Slower INSERT/UPDATE/DELETE (index must be updated too), extra storage space.
-
-**Why not index every column?** Each index adds overhead on every write operation and consumes storage — so index only columns frequently used in WHERE/JOIN/ORDER BY.
-
-```text
+```
                          INDEXING IN DBMS
                                │
               ┌────────────────┴────────────────┐
@@ -310,113 +235,199 @@ This avoids a JOIN on every query, but now if the customer's name changes, it mu
                                       Bitmap Index
 ```
 
-| **Clustered** | **Non-clustered** |
-|---------------|-------------------|
-| Stores actual data | Stores pointers |
-| Data physically sorted | Separate index |
-| Only one | Multiple |
-| Faster range queries | Faster specific lookups |
+- **Dense Index** – an index entry for **every** record.
+- **Sparse Index** – an index entry for **only some** records (one per block) — less storage, slightly slower lookup.
+- **Clustered Index** – physically sorts/stores table data in index order; only **one** per table (usually PK). Like a dictionary — physically in order.
+- **Non-Clustered Index** – separate structure with pointers to actual rows; **multiple** allowed per table. Like a book's back index.
+- **B+ Tree** – data stored only at leaf nodes, leaves linked together → fast for both exact lookup and **range queries**; what most RDBMS use.
 
-## 8. Joins ⭐⭐⭐
+| Clustered | Non-clustered |
+|---|---|
+| Stores actual data in sorted order | Stores pointers to data |
+| Only one per table | Multiple per table |
+| Faster range queries | Faster specific/point lookups |
 
-- **INNER JOIN**: Only matching rows from both tables.
-- **LEFT JOIN**: All rows from left table + matched rows from right (unmatched = NULL).
-- **RIGHT JOIN**: All rows from right table + matched rows from left (unmatched = NULL).
-- **FULL OUTER JOIN**: All rows from both tables; unmatched sides filled with NULL.
-- **SELF JOIN**: A table joined with itself (e.g., employee-manager relationship).
-- **CROSS JOIN**: Cartesian product — every row of table A with every row of table B.
-
-```sql
-SELECT e.name, d.dept_name
-FROM Employee e
-INNER JOIN Department d ON e.dept_id = d.dept_id;
-```
-
-- **JOIN vs Subquery**: JOIN combines tables directly in one result set; subquery nests a query inside another, often used for filtering, not combining columns.
-- **Joining 3 tables**: Just chain JOIN clauses with proper ON conditions between each pair.
+**Trade-off**: faster reads, but slower INSERT/UPDATE/DELETE (index must update too) + extra storage. So index only columns frequently used in WHERE/JOIN/ORDER BY.
 
 ---
 
-## 9. SQL Command Types
+## 8. Joins ⭐⭐⭐
 
-- **DDL** (Data Definition): CREATE, ALTER, DROP, TRUNCATE — define/modify structure.
-- **DML** (Data Manipulation): INSERT, UPDATE, DELETE — modify data.
-- **DQL** (Data Query): SELECT — retrieve data.
-- **DCL** (Data Control): GRANT, REVOKE — manage permissions.
-- **TCL** (Transaction Control): COMMIT, ROLLBACK, SAVEPOINT — manage transactions.
+```sql
+-- INNER: only matching rows
+SELECT * FROM A INNER JOIN B ON A.id = B.id;
 
-**Key differences:**
-- **DELETE vs TRUNCATE vs DROP**: DELETE removes rows (can filter, logged, rollback-able), TRUNCATE removes all rows fast (can't filter, minimal logging), DROP removes the entire table structure.
-- **WHERE vs HAVING**: WHERE filters rows before grouping; HAVING filters groups after GROUP BY/aggregation.
-- **UNION vs UNION ALL**: UNION removes duplicates; UNION ALL keeps all rows (faster).
+-- LEFT: all of A + matched B (NULL if no match)
+SELECT * FROM A LEFT JOIN B ON A.id = B.id;
+
+-- RIGHT: all of B + matched A
+SELECT * FROM A RIGHT JOIN B ON A.id = B.id;
+
+-- FULL OUTER: all rows from both, NULL where no match
+SELECT * FROM A FULL JOIN B ON A.id = B.id;
+
+-- SELF: table joined with itself (e.g., employee-manager)
+SELECT e.Name, m.Name AS Manager FROM Employee e JOIN Employee m ON e.MgrID = m.EmpID;
+
+-- CROSS: cartesian product (every row x every row)
+SELECT * FROM A CROSS JOIN B;
+```
+
+- **JOIN vs Subquery** – JOIN combines tables directly into one result set; a subquery nests a query inside another, often used for filtering rather than combining columns.
+- **Joining 3+ tables** – chain JOIN clauses with proper ON conditions between each pair.
+
+---
+
+## 9. SQL Command Types & Key Comparisons
+
+- **DDL** – CREATE, ALTER, DROP, TRUNCATE (define/modify structure).
+- **DML** – INSERT, UPDATE, DELETE (modify data).
+- **DQL** – SELECT (retrieve data).
+- **DCL** – GRANT, REVOKE (permissions).
+- **TCL** – COMMIT, ROLLBACK, SAVEPOINT (transaction control).
+
+### DELETE vs TRUNCATE vs DROP
+| | DELETE | TRUNCATE | DROP |
+|---|---|---|---|
+| Type | DML | DDL | DDL |
+| Removes | Rows (WHERE optional) | All rows | Entire table structure |
+| Rollback | Yes | Usually no (auto-commit) | No |
+| WHERE clause | Yes | No | No |
+| Speed | Slower (row-by-row, logged) | Faster | Fastest |
+
+### Other must-know comparisons
+- **WHERE vs HAVING** – WHERE filters rows *before* grouping; HAVING filters groups *after* GROUP BY/aggregation.
+- **UNION vs UNION ALL** – UNION removes duplicates (slower, sorts internally); UNION ALL keeps duplicates (faster).
+- **CHAR vs VARCHAR** – CHAR = fixed length, space-padded, faster for fixed data. VARCHAR = variable length, stores only actual chars, saves space.
+
+```sql
+SELECT DeptID, COUNT(*) FROM Employee
+GROUP BY DeptID
+HAVING COUNT(*) > 5;
+```
+
+**Aggregate Functions**: `COUNT()`, `SUM()`, `AVG()`, `MIN()`, `MAX()` — operate on a row set, return a single value.
 
 ---
 
 ## 10. Database Objects
 
-- **View**: Virtual table from a saved query; simplifies complex queries, adds a security layer.
-- **Stored Procedure**: Precompiled set of SQL statements that can perform actions (INSERT/UPDATE/etc.), callable by name.
-- **Function**: Similar to a procedure but must return a value, usable inside SQL expressions.
-- **Trigger**: Code that auto-executes on an event (INSERT/UPDATE/DELETE) on a table.
-- **Cursor**: Used to process query results row-by-row (loop through a result set).
+- **View** – virtual table from a saved query; simplifies complex queries, adds a security layer (restrict columns/rows).
+```sql
+CREATE VIEW HighEarners AS
+SELECT Name, Salary FROM Employee WHERE Salary > 100000;
+```
+- **Stored Procedure** – precompiled block of SQL, callable by name; reduces network round-trips, reusable logic.
+```sql
+CREATE PROCEDURE GetEmployee(IN empId INT)
+BEGIN
+  SELECT * FROM Employee WHERE ID = empId;
+END;
+CALL GetEmployee(101);
+```
+- **Function** – like a procedure, but **must return a value** and can be used inside a SQL expression/SELECT.
+- **Trigger** – code that auto-executes on an event (INSERT/UPDATE/DELETE) on a table; used for auditing, enforcing business rules.
+```sql
+CREATE TRIGGER before_insert_salary
+BEFORE INSERT ON Employee
+FOR EACH ROW
+SET NEW.CreatedAt = NOW();
+```
+- **Cursor** – processes a query's result set **row-by-row** (loop), typically inside a stored procedure.
 
 **Differences:**
-- **Procedure vs Function**: Function must return a value and can be used in SELECT; Procedure may or may not return a value and is called separately.
-- **View vs Table**: Table stores actual data; View is a saved query that shows data dynamically without storing it.
+- **Procedure vs Function** – Function must return a value, usable in SELECT; Procedure may not return a value, called separately.
+- **View vs Table** – Table physically stores data; View is a saved query, shows data dynamically without storing it.
+- **Stored Procedure vs Trigger** – SP is explicitly called; Trigger auto-fires on a DB event.
 
 ---
 
 ## 11. ER Model
 
-- **Entity**: An object (e.g., Customer, Product).
-- **Attribute**: A property of an entity (e.g., name, price).
-- **Relationship**: How entities are connected (e.g., "places").
-- **Strong vs Weak Entity**: Strong has its own PK; Weak depends on a strong entity for identity.
+- **Entity** – real-world object with attributes (e.g., Student, Order).
+- **Attribute** – property of an entity (e.g., name, price).
+- **Relationship** – association between entities (e.g., Student *enrolls in* Course).
+- **Strong Entity** – has its own PK, exists independently.
+- **Weak Entity** – no PK of its own; depends on a strong entity via FK + partial key (e.g., `Dependent` of an `Employee`).
+
+**ER Diagram notation:** Entity → rectangle, Attribute → oval, Relationship → diamond, Key attribute → underlined oval.
 
 **Relationship types:**
-- **One-to-One**: One entity instance relates to exactly one of another (e.g., Person ↔ Passport).
-- **One-to-Many**: One entity relates to many others (e.g., Customer → many Orders).
-- **Many-to-Many**: Many entities relate to many others (e.g., Students ↔ Courses).
-
-**Example:** Customer → *places* → Order (One-to-Many: one customer can place many orders).
+- **One-to-One** – e.g., Person ↔ Passport.
+- **One-to-Many** – e.g., Customer → many Orders.
+- **Many-to-Many** – e.g., Students ↔ Courses.
 
 ---
 
-## 12. SQL — Must Practice ⭐⭐⭐
+## 12. Storage & Internals (Good to Know)
 
-**Core syntax to be fluent in:**
-- SELECT / WHERE, ORDER BY, GROUP BY, HAVING
-- Aggregates: COUNT, SUM, AVG, MIN, MAX
-- DISTINCT, CASE WHEN
-- All JOIN types
-- Subqueries and **Correlated Subquery** (inner query depends on outer query's row, runs repeatedly)
-- **CTE** (`WITH temp AS (...) SELECT ...`) — makes complex queries readable
-- **Window Functions**: `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()` — assign ranking/numbering without collapsing rows
-- **PARTITION BY** — resets window function calculation per group
-
-**Common patterns to practice:**
-- Nth highest salary (use `DENSE_RANK()` or subquery with `LIMIT`/`OFFSET`)
-- Top N per group (use `ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC)`)
-- Employees earning more than their manager (self join)
-- Find/delete duplicate records (GROUP BY + HAVING COUNT > 1, or ROW_NUMBER)
-- Department-wise counts/highest salary (GROUP BY + aggregate)
-- Customers with no orders (LEFT JOIN + WHERE right side IS NULL)
-- Latest record per customer (window function or correlated subquery)
-- Running total (`SUM(...) OVER (ORDER BY date)`)
-- Consecutive-day/activity problems (window functions comparing row to previous row)
+- **B Tree vs B+ Tree** – B Tree stores data in internal + leaf nodes, no linked leaves (slower range queries). B+ Tree stores data **only** at leaf nodes, leaves linked → faster range queries; used by most RDBMS (e.g., MySQL InnoDB).
+- **Hash Index** – maps key → bucket via hash function; very fast for equality (`=`) lookups, but **can't do range queries** (`<`, `>`, `BETWEEN`).
+- **Pages and Blocks** – Block = smallest disk I/O unit (e.g., 4KB/8KB). Page = DB's logical storage unit, usually maps to one or more blocks; rows live inside pages.
+- **Query Optimization** – the query optimizer picks the cheapest execution plan (which index, join order, join algorithm) using table/index statistics, to minimize I/O + CPU cost.
+- **Execution Plan** – step-by-step roadmap the engine follows to run a query (index scan vs full table scan, join method); viewed via `EXPLAIN` in MySQL/PostgreSQL — helps spot slow queries/missing indexes.
 
 ---
 
-## Priority Order (if short on time)
+## 13. SQL — Practice Fluency ⭐⭐⭐
+
+**Core syntax:** SELECT/WHERE, ORDER BY, GROUP BY, HAVING, aggregates, DISTINCT, CASE WHEN, all JOIN types.
+
+- **Subquery vs Correlated Subquery** – correlated subquery depends on the outer query's current row and runs once per outer row (repeatedly); normal subquery runs once independently.
+- **CTE** – `WITH temp AS (...) SELECT ...` — makes complex/nested queries readable.
+- **Window Functions** – `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()` — assign ranking/numbering without collapsing rows into groups.
+- **PARTITION BY** – resets the window function's calculation per group (like a GROUP BY that doesn't collapse rows).
+
+**Common interview query patterns to practice:**
+- Nth highest salary → `DENSE_RANK()` or subquery with `LIMIT`/`OFFSET`.
+- Top N per group → `ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC)`.
+- Employees earning more than their manager → self join.
+- Find/delete duplicate rows → `GROUP BY ... HAVING COUNT(*) > 1`, or `ROW_NUMBER()`.
+- Department-wise counts / highest salary → `GROUP BY` + aggregate.
+- Customers with no orders → `LEFT JOIN` + `WHERE right.col IS NULL`.
+- Latest record per customer → window function or correlated subquery.
+- Running total → `SUM(...) OVER (ORDER BY date)`.
+- Consecutive-day/activity problems → window function comparing a row to the previous row.
+
+---
+
+## 14. Interview Favorite Comparisons — Quick Recap
+
+| Comparison | Key Difference |
+|---|---|
+| DBMS vs RDBMS | RDBMS enforces tabular structure + relationships + ACID |
+| Primary Key vs Unique Key | PK: no NULL, 1 per table; Unique: 1 NULL allowed, multiple per table |
+| Primary Key vs Foreign Key | PK identifies own row; FK references another table's PK |
+| Candidate Key vs Super Key | Every candidate key is a minimal super key; not every super key is minimal |
+| DELETE vs TRUNCATE vs DROP | DELETE = rows (DML, rollback); TRUNCATE = all rows (DDL, fast); DROP = whole table |
+| CHAR vs VARCHAR | CHAR = fixed length; VARCHAR = variable length, space-efficient |
+| WHERE vs HAVING | WHERE filters before grouping; HAVING filters after grouping (aggregates) |
+| UNION vs UNION ALL | UNION removes duplicates; UNION ALL keeps them (faster) |
+| Clustered vs Non-clustered Index | Clustered = data physically sorted; Non-clustered = separate pointer structure |
+| Dense vs Sparse Index | Dense = entry per record; Sparse = entry per block |
+| B Tree vs B+ Tree | B+ Tree stores data only at leaves + linked leaves (range-query friendly) |
+| 3NF vs BCNF | BCNF is stricter: every determinant must be a candidate key |
+| View vs Table | View = virtual, query-based, no storage; Table = physically stores data |
+| Stored Procedure vs Trigger | SP = explicitly called; Trigger = auto-fires on a DB event |
+| Procedure vs Function | Function must return a value, usable in SELECT; Procedure need not |
+| Normalization vs Denormalization | Normalization favors integrity/writes; Denormalization favors read speed |
+| Subquery vs Correlated Subquery | Correlated subquery re-runs per outer row; normal subquery runs once |
+
+---
+
+## 15. Priority Order (if short on time)
 
 **Tier 1 (must be strong):** Normalization → Keys → ACID/Transactions → Joins + SQL → Indexing
 
 **Tier 2 (good understanding):** Concurrency + Isolation Levels → Constraints → ER Model
 
-**Tier 3 (quick definitions only):** DBMS/RDBMS basics → Schema/Instance/Degree/Cardinality → Views/Triggers/Cursors/Procedures/Functions → SQL command types
+**Tier 3 (quick definitions only):** DBMS/RDBMS basics → Schema/Instance/Degree/Cardinality → Views/Triggers/Cursors/Procedures/Functions → SQL command types → Storage internals (B-Tree vs B+Tree, Hash Index, Pages/Blocks, Query Optimization, Execution Plan)
 
-**Skip entirely:** Relational algebra/calculus, serializability proofs, precedence graphs, timestamp protocols, 2PL internals, recovery/log-based algorithms, RAID/file organization, query optimizer internals, distributed DBs.
+**Skip entirely (very unlikely to be asked in depth):** Relational algebra/calculus, serializability proofs, precedence graphs, timestamp protocols, recovery/log-based algorithms, RAID/file organization internals, distributed DBs.
 
 ---
+
+### Quick Interview Tip
+For any topic: **Definition → 1-line example → why it matters.** Keeps answers crisp and confident without rambling.
 
 *Once this is solid, shift remaining prep time to: projects, SQL coding practice, OOP, OS, DSA, system design.*
